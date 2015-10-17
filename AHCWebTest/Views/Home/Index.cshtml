@@ -1,0 +1,13 @@
+﻿@{
+    ViewBag.Title = "Home - Order Summary";
+}
+<h2>@ViewBag.Title</h2>
+
+<div class="navbar-collapse collapse">
+    <ul class="nav navbar-nav">
+        <li>@Html.ActionLink("Weekly", "OrderSummary", "Home", new { ordertype = 1 },null)</li>
+        <li>@Html.ActionLink("Monthly", "OrderSummary", "Home", new { ordertype = 2 }, null)</li>
+        <li>@Html.ActionLink("Year", "OrderSummary", "Home", new { ordertype = 3 }, null)</li>
+    </ul>
+</div>
+

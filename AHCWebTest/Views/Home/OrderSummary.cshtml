@@ -1,0 +1,141 @@
+﻿@model AHCWebTest.Models.OrderSummaries
+
+<h2>@ViewBag.Title</h2>
+
+<div class="table-responsive">
+    <div class="navbar-collapse collapse">
+        <ul class="nav navbar-nav">
+            <li>@Html.ActionLink("Home", "Index", "Home")</li>
+            @if (Model.OrderSummaryType != AHCWebTest.Enums.OrderSummaryTypes.Weekly)
+            {
+                <li>@Html.ActionLink("Weekly", "OrderSummary", "Home", new { ordertype = AHCWebTest.Enums.OrderSummaryTypes.Weekly }, null)</li>
+            }
+            @if (Model.OrderSummaryType != AHCWebTest.Enums.OrderSummaryTypes.Month)
+            {
+                <li>@Html.ActionLink("Monthly", "OrderSummary", "Home", new { ordertype = AHCWebTest.Enums.OrderSummaryTypes.Month }, null)</li>
+            }
+            @if (Model.OrderSummaryType != AHCWebTest.Enums.OrderSummaryTypes.Year)
+            {
+                <li>@Html.ActionLink("Year", "OrderSummary", "Home", new { ordertype = AHCWebTest.Enums.OrderSummaryTypes.Year }, null)</li>
+            }
+        </ul>
+    </div>
+    <div class="row-fluid">
+        <div id="daily" class="span5">
+            <canvas id="canvas" width="80" height="20" class="table"></canvas>
+        </div>
+        <div class="span7"></div>
+    </div>
+
+    <table class="table text-center" cellpadding="5" cellspacing="5">
+        <tr class="text-center">
+            <td>
+                <div class="rcorners">
+                    <span id="avgOrderAmt"></span><br />
+                    <span>Average Order Amount</span>
+                </div>
+            </td>
+            <td>
+                <div class="rcorners">
+                    <span id="totalOrderAmt"></span><br />
+                    <span>Total Order Amount</span>
+                </div>
+            </td>
+            <td>
+                <div class="rcorners">
+                    <span id="avgShippedAmt"></span><br />
+                    <span>Average Shipped Amount</span>
+                </div>
+            </td>
+            <td>
+                <div class="rcorners">
+                    <span id="totalShipAmt"></span><br />
+                    <span>Total Shipped Amount</span>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <table class="table table-condensed table-hover table-bordered">
+        <tr>
+            <th class="col-sm-2 text-left">Period</th>
+            <th class="col-sm-2 text-left">Ordered</th>
+            <th class="col-sm-2 text-left">Shipped</th>
+            <th class="col-sm-2 text-left">Remainder</th>
+            <th class="col-sm-2 text-left">TotalOrderAmt</th>
+            <th class="col-sm-2 text-left">TotalShippedAmt</th>
+        </tr>
+
+        @foreach (var p in Model.OrderSummaryList)
+            {
+            <tr>
+                <td>@p.PeriodLabel</td>
+                <td>@p.Ordered</td>
+                <td>@p.Shipped</td>
+                <td>@p.Remainder</td>
+                <td>@string.Format("{0:C}", p.TotalOrderedAmount)</td>
+                <td>@string.Format("{0:C}", p.TotalShippedAmount)</td>
+            </tr>
+        }
+    </table>
+</div>
+<script src="~/Scripts/Chart.js"></script>
+<script>
+        // Get the context of the canvas element we want to select
+        var ctx = document.getElementById("canvas").getContext("2d");
+        var allLabels = [];
+        var totalOrderAmts = [];
+        var totalShippedAmts = [];
+
+        function respondCanvas() {
+            //Does not seem to work. it refreshes but not resize the canvas
+            var c = $('#canvas');
+            c.attr('width', jQuery("#daily").width());
+            c.attr('height', jQuery("#daily").height());
+            var myNewChart = new Chart(ctx).Bar(lineChartData);
+        }
+        $(window).resize(respondCanvas);
+        $(document).ready(function(){
+
+            @foreach (var order in Model.OrderSummaryList)
+            {
+                @:allLabels.push("@order.PeriodLabel");
+                @:totalOrderAmts.push(@order.TotalOrderedAmount);
+                @:totalShippedAmts.push(@order.TotalShippedAmount);
+            }
+            var sumOfTotalOrdered = @Model.SumTotalOrderAmounts();
+            var sumOfTotalShipped = @Model.SumTotalShippedAmounts();
+            var avgOrderedAmt = @Model.GetAverageOrderAmount();
+            var avgShippedAmt = @Model.GetAverageShippedAmounts();
+
+            $("#avgOrderAmt").text(avgOrderedAmt.toFixed(2).replace(/(\d)(?=(\d{3})+\.)/g, '$1,'));
+            $("#totalOrderAmt").text(sumOfTotalOrdered.toFixed(2).replace(/(\d)(?=(\d{3})+\.)/g, '$1,'));
+            $("#avgShippedAmt").text(avgShippedAmt.toFixed(2).replace(/(\d)(?=(\d{3})+\.)/g, '$1,'));
+            $("#totalShipAmt").text(sumOfTotalShipped.toFixed(2).replace(/(\d)(?=(\d{3})+\.)/g, '$1,'));
+            lineChartData = {
+                labels: allLabels,
+                datasets: [{
+                    fillColor: "rgba(220,220,220,0.2)",
+                    strokeColor: "rgba(220,220,220,1)",
+                    pointColor: "rgba(220,220,220,1)",
+                    pointStrokeColor: "#fff",
+                    pointHighlightFill: "#fff",
+                    pointHighlightStroke: "rgba(220,220,220,1)",
+                    data: totalOrderAmts
+                }, {
+                    fillColor: "rgba(151,187,205,0.2)",
+                    strokeColor: "rgba(151,187,205,1)",
+                    pointColor: "rgba(151,187,205,1)",
+                    pointStrokeColor: "#fff",
+                    pointHighlightFill: "#fff",
+                    pointHighlightStroke: "rgba(151,187,205,1)",
+                    data: totalShippedAmts
+                }]
+            }
+            lineChart = new Chart(ctx).Bar(lineChartData, {
+                scaleLabel: function (label) { return ' $' + label.value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");}
+            });
+
+        });
+</script>
+
